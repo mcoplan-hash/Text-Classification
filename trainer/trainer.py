@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from pytorchtools1 import EarlyStopping
 
 from utils import TensorboardWriter, AverageMeter, save_checkpoint, \
     clip_gradient, adjust_learning_rate
@@ -201,7 +202,17 @@ class Trainer:
                         acc = accs
                     )
                 )
-
+                torch.save(self.model.state_dict(), 'trained_model_epoch_{}.pth'.format(epoch))
+                save_checkpoint(
+                    epoch = epoch,
+                    model = self.model,
+                    model_name = self.model_name,
+                    optimizer = self.optimizer,
+                    dataset_name = self.dataset_name,
+                    word_map = self.word_map,
+                    checkpoint_path = self.checkpoint_path,
+                    checkpoint_basename = '{}_epoch_{}'.format(self.checkpoint_basename,epoch)
+                )
     def run_train(self):
         start = time.time()
 

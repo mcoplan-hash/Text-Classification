@@ -3,6 +3,8 @@ from tqdm import tqdm
 from typing import Dict, Tuple
 import numpy as np
 import torch
+import fasttext
+import json
 
 def init_embeddings(embeddings: torch.Tensor) -> None:
     """
@@ -45,14 +47,12 @@ def load_embeddings(
     """
     emb_basename = os.path.basename(emb_file)
     cache_path = os.path.join(output_folder, emb_basename + '.pth.tar')
+    embed_dim = 200
 
     # no cache, load embeddings from .txt file
     if not os.path.isfile(cache_path):
         # find embedding dimension
-        with open(emb_file, 'r') as f:
-            embed_dim = len(f.readline().split(' ')) - 1
-            num_lines = len(f.readlines())
-
+        model = fasttext.load_model(emb_file)
         vocab = set(word_map.keys())
 
         # create tensor to hold embeddings, initialize
@@ -60,16 +60,11 @@ def load_embeddings(
         init_embeddings(embeddings)
 
         # read embedding file
-        for line in tqdm(open(emb_file, 'r'), total = num_lines, desc = 'Loading embeddings'):
-            line = line.split(' ')
-
-            emb_word = line[0]
-            embedding = list(map(lambda t: float(t), filter(lambda n: n and not n.isspace(), line[1:])))
-
+        for emb_word in model.words:
             # ignore word if not in train_vocab
             if emb_word not in vocab:
                 continue
-
+            embedding = model[emb_word]
             embeddings[word_map[emb_word]] = torch.FloatTensor(embedding)
 
         # create cache file so we can load it quicker the next time
@@ -82,3 +77,9 @@ def load_embeddings(
         embeddings, embed_dim = torch.load(cache_path)
 
     return embeddings, embed_dim
+
+if __name__ == '__main__':
+    with open('/mnt/data/mcoplan/Text-Classification/data/outputs/current_smoker/word_map.json', 'r') as j:
+        word_map = json.load(j)
+    load_embeddings('/mnt/data/mcoplan/Text-Classification/data/glove/BioWordVec_PubMed_MIMICIII_d200.bin', word_map ,'/mnt/data/mcoplan/Text-Classification/data/outputs/current_smoker')
+    print('done')

@@ -23,6 +23,7 @@ from tensorflow.keras.preprocessing.text import text_to_word_sequence
 
 from datasets import get_clean_text, get_label_map
 from utils import *
+import pandas as pd
 
 stemmer = PorterStemmer()
 stopwords_list = set(stopwords.words('english'))
@@ -33,6 +34,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # path to the checkpoint
 checkpoint_path = '/mnt/data/mcoplan/Text-Classification/checkpoints/checkpoint_han_current_smoker_epoch_7.pth.tar'
+
+
+#read CSV files of FN and FP for CADEN "prod" smoker fact (smoker, tobacco or broad, current/RFT, <= 7 days; AND NOT smoker, ex/never/marijuana, <= 7 days')
+FN = pd.read_csv('/mnt/data/mcoplan/factengine-data-pycharm/factengine_data/airflow_source/dags/CADEN_smoker_prod_fact_false_negative.csv')
+FP = pd.read_csv('/mnt/data/mcoplan/factengine-data-pycharm/factengine_data/airflow_source/dags/CADEN_smoker_prod_fact_false_positive.csv')
+
+FN_list = FN['text'].tolist()
+FP_list = FP['text'].tolist()
 
 # pad limits
 # only makes sense when model_name = 'han'
@@ -227,25 +236,39 @@ def classify(
 
 
 if __name__ == '__main__':
-    text1 = 'the patient is a current smoker'
-    text2 = 'The patient is a non smoker.  The patient is a never smoker.'
-    text3 = 'the patient is not a smoker.'
-    text4 = 'The patient is a current everyday smoker. He smokes 1 pack per day. He smokers tobacco every day. Smoking Cessation recommended. He smokes cigarettes every day.'
-    text5 = '! Reviewed Social History i General IM and Zlka : lllicit drugs: No (Notes: pravious meth addiction- 15 months and 17 days ago) : Qeewpation: Unemployed : Edueation: 10 ; Marital status: Divarced | Sexual orientation: Heterosexual | Exercise level: Heavy Diet: Regular i General stress level: High Alcohol intake: None Caffeine intake: Heavy . Guns present in home: N ¢ Seat belts used routinely: Y | Sunscreen used routinely: N ; Smoke alarm in home: Y ¢ Advance directive: N ¢ Medical Power of Attorney: N i Performs monthly self-breast exam: N i Legally blind in ore or both eyes?: N : Hard of hearing or deaf in one or both ears?: N 15 the: patient ambulatory?: Yes: walks without restrictions i Tobacco Smoking Status: Current every day smoker | Smoker (1 1/2 PPD) | Mave you recently (within the Jast 12 weeks, or during a current pregnancy) fraveled to or lived in a Zika-affected area?: N Do you have symptoms associated with Zika virus (fever, rash, joint pain, or conjunctivitis)?: N ; Have you had sexual relations with anyone wha has been pasitivaly diagnosed with Zika virus within the last 6 manths?: N'
-    text6 = "8. Smoker Notes: Smoking cessation counselling given. The patient likes to eat apples"
-    text7 = 'the patient smokes 1 ppd'
-    text8 = 'the patient smoked but quit 2 years ago'
-
-    text = [text1, text2, text3, text4, text5, text6, text7, text8]
+    # text1 = 'the patient is a current smoker'
+    # text2 = 'The patient is a non smoker.  The patient is a never smoker.'
+    # text3 = 'the patient is not a smoker.'
+    # text4 = 'The patient is a current everyday smoker. He smokes 1 pack per day. He smokers tobacco every day. Smoking Cessation recommended. He smokes cigarettes every day.'
+    # text5 = '! Reviewed Social History i General IM and Zlka : lllicit drugs: No (Notes: pravious meth addiction- 15 months and 17 days ago) : Qeewpation: Unemployed : Edueation: 10 ; Marital status: Divarced | Sexual orientation: Heterosexual | Exercise level: Heavy Diet: Regular i General stress level: High Alcohol intake: None Caffeine intake: Heavy . Guns present in home: N ¢ Seat belts used routinely: Y | Sunscreen used routinely: N ; Smoke alarm in home: Y ¢ Advance directive: N ¢ Medical Power of Attorney: N i Performs monthly self-breast exam: N i Legally blind in ore or both eyes?: N : Hard of hearing or deaf in one or both ears?: N 15 the: patient ambulatory?: Yes: walks without restrictions i Tobacco Smoking Status: Current every day smoker | Smoker (1 1/2 PPD) | Mave you recently (within the Jast 12 weeks, or during a current pregnancy) fraveled to or lived in a Zika-affected area?: N Do you have symptoms associated with Zika virus (fever, rash, joint pain, or conjunctivitis)?: N ; Have you had sexual relations with anyone wha has been pasitivaly diagnosed with Zika virus within the last 6 manths?: N'
+    # text6 = "8. Smoker Notes: Smoking cessation counselling given. The patient likes to eat apples"
+    # text7 = 'the patient smokes 1 ppd'
+    # text8 = 'the patient smoked but quit 2 years ago'
+    # text9 = FN_list[0]
+    #
+    # text = [text1, text2, text3, text4, text5, text6, text7, text8, text9]
 
     # load model and word map
     model, model_name, _, dataset_name, word_map, _ = load_checkpoint(checkpoint_path, device)
     model = model.to(device)
     model.eval()
+
     #prediction = classify(text, model, model_name, dataset_name, word_map)
     # visualize_attention(*classify(text, model, model_name, dataset_name, word_map))
-    for i in text:
-        print(i)
+    FN_prediction = []
+    for i in FN_list:
         prediction = classify(i, model, model_name, dataset_name, word_map)
-        print(prediction)
+        FN_prediction.append(prediction)
 
+    FP_prediction = []
+    for i in FP_list:
+        prediction = classify(i, model, model_name, dataset_name, word_map)
+        FP_prediction.append(prediction)
+
+    df_FN = pd.DataFrame({'text': FN_list,'model_prediction': FN_prediction})
+    df_FN.to_csv('CADEN_FN_model_results.csv', index=False)
+
+    df_FP = pd.DataFrame({'text': FP_list,'model_prediction': FP_prediction})
+    df_FP.to_csv('CADEN_FP_model_results.csv', index=False)
+
+    print('Done')

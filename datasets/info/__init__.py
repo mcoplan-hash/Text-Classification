@@ -1,7 +1,7 @@
 from typing import Tuple, Dict
 
 from . import ag_news, dbpedia, yelp_polarity, yelp_full, yahoo_answers, \
-    amazon_polarity, amazon_full
+    amazon_polarity, amazon_full, current_smoker
 
 def get_label_map(dataset: str) -> Tuple[Dict[str, int], Dict[int, str]]:
     if dataset == 'ag_news':
@@ -18,6 +18,8 @@ def get_label_map(dataset: str) -> Tuple[Dict[str, int], Dict[int, str]]:
         classes = amazon_polarity.classes
     elif dataset == 'amazon_full':
         classes = amazon_full.classes
+    elif dataset == 'current_smoker':
+        classes = current_smoker.classes
     else:
         raise Exception("Dataset not supported: ", dataset)
 

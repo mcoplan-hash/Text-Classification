@@ -1,7 +1,6 @@
 """
 Preprocess data for document classification.
 """
-
 import torch
 from typing import Tuple, Dict
 from collections import Counter
@@ -10,8 +9,29 @@ from tqdm import tqdm
 import pandas as pd
 import os
 import json
-
+import numpy as np
+import re
+#from utils import get_clean_text
 from .utils import get_clean_text
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import TreebankWordTokenizer
+from nltk.tokenize import word_tokenize as wt
+from torch import nn
+from tensorflow.keras.preprocessing.text import text_to_word_sequence
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import word_tokenize as wt
+from utils import *
+
+
+stemmer = PorterStemmer()
+stopwords_list = set(stopwords.words('english'))
+stopwords_list -= {'no', 'not', 'isn', 'haven', 'hasn', 'hadn', 'doesn', 'didn'}  # keep negation stopwords
+
+sentence_limit_per_doc = 25
+word_limit_per_sentence = 50
+
 
 # tokenizers
 sent_tokenizer = PunktSentenceTokenizer()
@@ -61,23 +81,43 @@ def read_csv(
 
         for text in row[1:]:
             for paragraph in get_clean_text(text).splitlines():
-                sentences.extend([s for s in sent_tokenizer.tokenize(paragraph)])
+                dataset = []
+                for raw_word in text_to_word_sequence(paragraph):
+                    text = re.sub('[^A-Za-z]', ' ', raw_word)
+                    text = text.lower()
+                    tokenized_text = wt(text)
+                    text_processed = []
+                    for word in tokenized_text:
+                        if word not in stopwords_list:
+                            text_processed.append((stemmer.stem(word)))
+                    text = " ".join(text_processed)
+                    if text != '':
+                        dataset.append(text)
+                        word_counter.update(dataset)
+                dataset = np.array(dataset)
+                zero = np.empty(sentence_limit_per_doc * word_limit_per_sentence, dtype='<U15')
+                zero[(len(zero) - len(dataset)):len(zero)] = dataset
+                doc = zero.reshape(sentence_limit_per_doc, word_limit_per_sentence)
 
-        words = list()
-        for s in sentences[:sentence_limit]:
-            w = word_tokenizer.tokenize(s)[:word_limit]
-            # if sentence is empty (due to removing punctuation, digits, etc.)
-            if len(w) == 0:
-                continue
-            words.append(w)
-            word_counter.update(w)
+        #         sentences.extend([s for s in sent_tokenizer.tokenize(paragraph)])
+        #
+        # words = list()
+        # for s in sentences[:sentence_limit]:
+        #     w = word_tokenizer.tokenize(s)[:word_limit]
+        #     # if sentence is empty (due to removing punctuation, digits, etc.)
+        #     if len(w) == 0:
+        #         continue
+        #     words.append(w)
+        #     word_counter.update(w)
+        #
+        # # if all sentences were empty
+        # if len(words) == 0:
+        #     continue
 
-        # if all sentences were empty
-        if len(words) == 0:
-            continue
 
-        labels.append(int(row[0]) - 1) # since labels are 1-indexed in the CSV
-        docs.append(words)
+
+        labels.append(int(row[0])) # since labels are 1-indexed in the CSV
+        docs.append(doc)
 
     return docs, labels, word_counter
 
@@ -212,3 +252,9 @@ def run_prepro(
     print('Test data: encoded, padded data saved to %s.\n' % os.path.abspath(output_folder))
 
     print('All done!\n')
+
+if __name__ == '__main__':
+    #test_sents, test_labels, _ = read_csv('/mnt/data/mcoplan/Text-Classification/data/current_smoker_csv', 'test', 5)
+    train_sents, train_labels, word_counter = read_csv('/mnt/data/mcoplan/Text-Classification/data/current_smoker_csv', 'train', sentence_limit_per_doc, word_limit_per_sentence)
+    print('done')
+

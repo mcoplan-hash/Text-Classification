@@ -10,9 +10,27 @@ from tqdm import tqdm
 import pandas as pd
 import os
 import json
-
+import numpy as np
+import re
+#from utils import get_clean_text
 from .utils import get_clean_text
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import TreebankWordTokenizer
+from nltk.tokenize import word_tokenize as wt
+from torch import nn
+from tensorflow.keras.preprocessing.text import text_to_word_sequence
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import word_tokenize as wt
+from utils import *
 
+sentence_limit_per_doc = 25
+word_limit_per_sentence = 50
+
+stemmer = PorterStemmer()
+stopwords_list = set(stopwords.words('english'))
+stopwords_list -= {'no', 'not', 'isn', 'haven', 'hasn', 'hadn', 'doesn', 'didn'}  # keep negation stopwords
 # tokenizers
 word_tokenizer = TreebankWordTokenizer()
 
@@ -57,16 +75,27 @@ def read_csv(csv_folder: str, split: str, word_limit: int) -> Tuple[list, list, 
             text = get_clean_text(text)
             s = s + text
 
-        words = word_tokenizer.tokenize(s)[:word_limit]
-        # if sentence is empty (due to removing punctuation, digits, etc.)
-        if len(words) == 0:
-            continue
-        word_counter.update(words)
-
-        labels.append(int(row[0]) - 1) # since labels are 1-indexed in the CSV
-        sents.append(words)
-
+        dataset = []
+        for raw_word in text_to_word_sequence(s):
+            text = re.sub('[^A-Za-z]', ' ', raw_word)
+            text = text.lower()
+            tokenized_text = wt(text)
+            text_processed = []
+            for word in tokenized_text:
+                if word not in stopwords_list:
+                    text_processed.append((stemmer.stem(word)))
+            text = " ".join(text_processed)
+            if text != '':
+                dataset.append(text)
+                word_counter.update(dataset)
+        dataset = np.array(dataset)
+        doc = [dataset[x:x + word_limit_per_sentence] for x in range(0, len(dataset), word_limit_per_sentence)]
+        labels.append(int(row[0])) # since labels are 1-indexed in the CSV
+        sents.append(doc)
     return sents, labels, word_counter
+
+
+
 
 def encode_and_pad(
     input_sents: list, word_map: Dict[str, int], word_limit: int
@@ -175,3 +204,8 @@ def run_prepro(
     print('Test data: encoded, padded data saved to %s.\n' % os.path.abspath(output_folder))
 
     print('All done!\n')
+
+if __name__ == '__main__':
+    #test_sents, test_labels, _ = read_csv('/mnt/data/mcoplan/Text-Classification/data/current_smoker_csv', 'test', 5)
+    train_sents, train_labels, word_counter = read_csv('/mnt/data/mcoplan/Text-Classification/data/current_smoker_csv', 'train', 5)
+    print('done')
