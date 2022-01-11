@@ -50,7 +50,9 @@ class WordEncoder(nn.Module):
         # word embedding layer
         self.embeddings = nn.Embedding(vocab_size, emb_size)
         self.set_embeddings(embeddings, fine_tune)
-
+        # print('vocab_size {}'.format((vocab_size)))
+        # print('length of embeddings {}'.format(len(embeddings)))
+        # print('embeddings shape {}'.format(embeddings.shape))
         # word-level RNN (bidirectional GRU)
         self.word_rnn = nn.GRU(
             emb_size, word_rnn_size,
@@ -111,6 +113,11 @@ class WordEncoder(nn.Module):
             Attention weights on each word
         """
         # word embedding, apply dropout
+        # print('sentences')
+        # print(sentences)
+        # print(sentences.shape)
+        # print(torch.max(sentences))
+        # print(torch.min(sentences))
         sentences = self.dropout(self.embeddings(sentences)) # (n_sentences, word_pad_len, emb_size)
 
         # pack sequences (remove word-pads, SENTENCES -> WORDS)

@@ -34,7 +34,8 @@ def parse_opt() -> Config:
     parser.add_argument(
         '--config',
         type = str,
-        default = 'configs/ag_news/han.yaml',
+        #default = 'configs/ag_news/han.yaml',
+        default='configs/current_smoker/han.yaml',
         help = 'path to the configuration file (yaml)'
     )
     args = parser.parse_args()

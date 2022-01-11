@@ -6,6 +6,11 @@ import torch
 import fasttext
 import json
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# NOTE: IF LOADING NEW TRAINING DATA:
+# YOU MUST DELETE THE OLD .pth.tar FILE AND RE-RUN THIS SCRIPT
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 def init_embeddings(embeddings: torch.Tensor) -> None:
     """
     Fill embedding tensor with values from the uniform distribution.
@@ -75,11 +80,13 @@ def load_embeddings(
     else:
         print('Loading embeddings from {}'.format(cache_path))
         embeddings, embed_dim = torch.load(cache_path)
+        print(len(word_map))
 
     return embeddings, embed_dim
 
 if __name__ == '__main__':
-    with open('/mnt/data/mcoplan/Text-Classification/data/outputs/current_smoker/word_map.json', 'r') as j:
+    #First delete old embedding: rm /mnt/share/sandbox/mcoplan/facts/current_smoker/pytorch_models/BioWordVec_PubMed_MIMICIII_d200.bin.pth.tar
+    with open('/mnt/share/sandbox/mcoplan/facts/current_smoker/pytorch_models/word_map.json', 'r') as j:
         word_map = json.load(j)
-    load_embeddings('/mnt/data/mcoplan/Text-Classification/data/glove/BioWordVec_PubMed_MIMICIII_d200.bin', word_map ,'/mnt/data/mcoplan/Text-Classification/data/outputs/current_smoker')
+    load_embeddings('/mnt/data/mcoplan/Text-Classification/data/glove/BioWordVec_PubMed_MIMICIII_d200.bin', word_map ,'/mnt/share/sandbox/mcoplan/facts/current_smoker/pytorch_models')
     print('done')

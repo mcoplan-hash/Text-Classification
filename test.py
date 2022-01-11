@@ -5,7 +5,6 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score
-from sklearn.metrics import plot_precision_recall_curve
 from datasets import load_data
 from utils import AverageMeter, load_checkpoint, parse_opt
 
@@ -60,10 +59,6 @@ def test(model: nn.Module, model_name: str, test_loader: DataLoader) -> None:
             # keep track of metrics
             accs.update(accuracy, labels.size(0))
 
-            #plot a curve
-
-            disp = plot_precision_recall_curve(classifier, X_test, labels)
-            disp.ax_.set_title('2-class Precision-Recall curve')
 
         # final test accuracy
         print('\n * TEST ACCURACY - %.1f percent\n' % (accs.avg * 100))
@@ -76,7 +71,7 @@ if __name__ == '__main__':
 
     # load model
     checkpoint_path = os.path.join(config.checkpoint_path, config.checkpoint_basename + '.pth.tar')
-    checkpoint_path = '/mnt/data/mcoplan/Text-Classification/checkpoints/checkpoint_han_current_smoker_epoch_7.pth.tar'
+    checkpoint_path = '/mnt/data/mcoplan/Text-Classification/checkpoints/checkpoint_han_current_smoker_epoch_9.pth.tar'
     model, _, _, _, _, _ = load_checkpoint(checkpoint_path, device)
     model = model.to(device)
     model.eval()

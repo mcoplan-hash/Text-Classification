@@ -3,7 +3,6 @@ from typing import Optional, Dict
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from pytorchtools1 import EarlyStopping
 
 from utils import TensorboardWriter, AverageMeter, save_checkpoint, \
     clip_gradient, adjust_learning_rate
@@ -126,16 +125,22 @@ class Trainer:
 
         # batches
         for i, batch in enumerate(self.train_loader):
+            # print(len(batch))
+            # print(batch[0].shape)
+            # print(batch[1].shape)
+            # print(batch[2].shape)
+            # print(batch[3].shape)
             data_time.update(time.time() - start)
 
             if self.model_name in ['han']:
                 documents, sentences_per_document, words_per_sentence, labels = batch
-
+                #print(words_per_sentence)
                 documents = documents.to(device)  # (batch_size, sentence_limit, word_limit)
                 sentences_per_document = sentences_per_document.squeeze(1).to(device)  # (batch_size)
                 words_per_sentence = words_per_sentence.to(device)  # (batch_size, sentence_limit)
                 labels = labels.squeeze(1).to(device)  # (batch_size)
-
+                # print(words_per_sentence)
+                # print(words_per_sentence.shape)
                 # forward
                 scores, _, _ = self.model(
                     documents,

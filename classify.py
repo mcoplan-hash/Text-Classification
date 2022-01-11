@@ -32,12 +32,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # path to the checkpoint
-checkpoint_path = '/mnt/data/mcoplan/Text-Classification/checkpoints/checkpoint_han_current_smoker_epoch_7.pth.tar'
+checkpoint_path = '/mnt/share/sandbox/mcoplan/facts/current_smoker/pytorch_models/checkpoint_han_current_smoker_epoch_6.pth.tar'
 
 # pad limits
 # only makes sense when model_name = 'han'
 sentence_limit_per_doc = 25
-word_limit_per_sentence = 75
+word_limit_per_sentence = 50
 # only makes sense when model_name != 'han'
 word_limit = 200
 

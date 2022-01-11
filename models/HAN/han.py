@@ -62,6 +62,7 @@ class HAN(nn.Module):
         sentence_att_size: int,
         dropout: float = 0.5
     ) -> None:
+        #print(vocab_size)
         super(HAN, self).__init__()
 
         # sentence encoder
@@ -119,3 +120,25 @@ class HAN(nn.Module):
         scores = self.fc(self.dropout(document_embeddings))  # (n_documents, n_classes)
 
         return scores, word_alphas, sentence_alphas
+
+# if __name__ == '__main__':
+#     from torchvision import models
+#     from torchsummary import summary
+#
+#     #embeddings, embed_dim = torch.load(cache_path)
+#     model = HAN(
+#         n_classes=2,
+#         vocab_size=200,
+#         embeddings=None,
+#         emb_size=200,
+#         fine_tune=True,
+#         word_rnn_size=50,
+#         sentence_rnn_size=50,
+#         word_rnn_layers=1,
+#         sentence_rnn_layers=1,
+#         word_att_size=100,
+#         sentence_att_size=100,
+#         dropout=.25
+#     )
+#
+#     summary(model, (200, 25, 50))
